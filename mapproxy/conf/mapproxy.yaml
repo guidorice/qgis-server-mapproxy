@@ -1,0 +1,48 @@
+services:
+  demo:
+  tms:
+    use_grid_names: true
+  wmts:
+  wms:
+    srs: ['EPSG:3857']
+    image_formats: [ 'image/png', 'image/jpeg' ]
+
+grids:
+  web_mercator_grid:
+    srs: 'EPSG:3857'
+    origin: nw
+    # note: num_levels should be max zoom level + 2. (e.g. for zoom 0-21, use num_levels = 23)
+    num_levels: 23
+
+sources:
+  ne_10m_land:
+    # concurrent_requests is optional, however it might make sense to match
+    # the # of qgis-server containers.
+    concurrent_requests: 1
+    type: wms
+    req:
+      url: 'http://nginx-qgis/ogc/ne_10m_land?'
+      layers: ne_10m_land
+      transparent: true
+    coverage:
+      srs: 'EPSG:4326'
+      bbox: [-129.44,21.19,-93.08,37.84]
+
+caches:
+  cache_ne_10m_land:
+    sources: [ne_10m_land]
+    grids: [web_mercator_grid]
+    cache:
+      type: file
+
+layers:
+  - name: ne_10m_land
+    title: 'natural earth: land 1:10m with single-color style'
+    sources: [cache_ne_10m_land]
+
+globals:
+  image:
+    resampling_method: bicubic
+  cache:
+    base_dir: '/io/cache'
+    lock_dir: '/io/locks'

@@ -1,0 +1,5 @@
+.idea/
+mapproxy/locks/
+mapproxy/cache/
+.DS_Store
+

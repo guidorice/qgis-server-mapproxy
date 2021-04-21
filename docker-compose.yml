@@ -1,0 +1,71 @@
+# containerized qgis server + mapproxy + nginx
+#
+# dockerhub and github links:
+#
+#   https://hub.docker.com/r/openquake/qgis-server
+#   https://github.com/gem/oq-qgis-server
+#
+#   https://hub.docker.com/r/openquake/mapproxy-server
+#   https://github.com/gem/oq-mapproxy-docker
+
+version: "3.8"
+
+services:
+
+  qgis-server:
+    image: 'openquake/qgis-server:stable'
+    hostname: 'qgis-server'
+    environment:
+      # Do not run the embedded copy of nginx
+      SKIP_NGINX: 'true'
+      # Improve rendering performance
+      QGIS_SERVER_PARALLEL_RENDERING: 'true'
+      QGIS_SERVER_MAX_THREADS: 4
+      # Limit the maximum size returned by a GetMap
+      QGIS_SERVER_WMS_MAX_HEIGHT: 5000
+      QGIS_SERVER_WMS_MAX_WIDTH: 5000
+      # TODO use default loglevel
+      QGIS_SERVER_LOG_LEVEL: 0
+    networks:
+      - qgis-server-net
+    volumes:
+      - ./qgis/data:/io/data:ro
+      - ./qgis/plugins:/io/plugins
+      - ./qgis/fonts:/usr/share/fonts
+      - ./qgis/svg:/var/lib/qgis/.local/share/QGIS/QGIS3/profiles/default/svg
+    restart: always
+    expose:
+      # expose the FCGI port to be reverse-proxied by nginx
+      - '9993'
+
+  nginx-qgis:
+    image: 'nginx'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    expose:
+      # expose the nginx http port to be reverse-proxied by mapproxy
+      - '80'
+    networks:
+      - qgis-server-net
+    restart: always
+    depends_on:
+      - qgis-server
+
+  mapproxy:
+    image: openquake/mapproxy-server:stable
+    environment:
+      MAPPROXY_CPU: 4
+      MAPPROXY_DEV: "true"
+    networks:
+      - qgis-server-net
+    volumes:
+      - ./mapproxy:/io
+    restart: always
+    user: '1000:1000'
+    depends_on:
+      - qgis-server
+    ports:
+      - "8080:8080"
+
+networks:
+  qgis-server-net:

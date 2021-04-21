@@ -1,0 +1,12 @@
+seeds:
+  ne_10m_land:
+    caches: [cache_ne_10m_land]
+    coverages: [cov_ne_10m_land]
+    grids: [web_mercator_grid]
+
+coverages:
+  cov_ne_10m_land:
+    srs: 'EPSG:4326'
+    bbox: [-129.44,21.19,-93.08,37.84]
+
+cleanups:
